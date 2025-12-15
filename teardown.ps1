@@ -1,3 +1,12 @@
+
+<#
+  teardown.ps1
+  Deletes the ca1_rg resource group and all resources it contains.
+  Provides a clean teardown step for the Cloud Architecture CA1 environment.
+#>
+
+
+
 param(
     # Kept for consistency with setup.ps1, not actually used
     [string]$Location = "norwayeast"
