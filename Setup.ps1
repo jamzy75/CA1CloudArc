@@ -119,16 +119,17 @@ if (-not $nsg) {
 # 7. Public IP
 $publicIp = Get-AzPublicIpAddress -Name $pipName -ResourceGroupName $rgName -ErrorAction SilentlyContinue
 if (-not $publicIp) {
-    Write-Host "Creating public IP $pipName..."
+    Write-Host "Creating public IP $pipName (Standard SKU)..."
     $publicIp = New-AzPublicIpAddress `
         -Name $pipName `
         -ResourceGroupName $rgName `
         -Location $Location `
         -AllocationMethod Static `
-        -Sku Basic
+        -Sku Standard
 } else {
     Write-Host "Public IP $pipName already exists."
 }
+
 
 # 8. NIC
 $nic = Get-AzNetworkInterface -Name $nicName -ResourceGroupName $rgName -ErrorAction SilentlyContinue
