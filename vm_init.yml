@@ -1,0 +1,37 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+
+packages:
+  - openjdk-17-jdk
+  - tomcat9
+  - git
+
+write_files:
+  - path: /var/lib/tomcat9/webapps/ROOT/index.jsp
+    owner: root:root
+    permissions: '0644'
+    content: |
+      <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+      <html>
+      <head>
+          <title>TaskBoard on Azure</title>
+      </head>
+      <body>
+      <h1>TaskBoard – Java JSP app on Azure IaaS</h1>
+      <p>
+          This page is being served from an Apache Tomcat instance running on an
+          Ubuntu Linux virtual machine in Microsoft Azure.
+      </p>
+      <p>
+          Hostname: <%= java.net.InetAddress.getLocalHost().getHostName() %><br/>
+          Java version: <%= System.getProperty("java.version") %>
+      </p>
+      <hr/>
+      <p>Deployed automatically via cloud-init (vm_init.yml).</p>
+      </body>
+      </html>
+
+runcmd:
+  - systemctl enable tomcat9
+  - systemctl restart tomcat9
