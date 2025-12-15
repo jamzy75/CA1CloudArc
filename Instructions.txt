@@ -1,0 +1,139 @@
+VM setup and deployment instructions – TaskBoard on Azure IaaS
+
+Overview
+This document explains how to deploy and verify the TaskBoard Java web application on Azure using the
+provided PowerShell and cloud-init files. The deployment uses Azure IaaS resources (Linux VM, VNet,
+NSG, public IP) in the norwayeast region(This was my personal available region).
+
+Files in this repository
+- description.txt  – short description of the service and infrastructure
+- Setup.ps1        – PowerShell script to create the infrastructure and VM
+- vm_init.yml      – cloud-init configuration applied to the VM on first boot
+- teardown.ps1     – PowerShell script to delete the resource group and all resources
+
+Prerequisites
+1. An Azure subscription with permission to create resource groups and virtual machines.
+2. Access to the Azure Portal.
+3. The repository cloned into Azure Cloud Shell (PowerShell) or another environment with the Az
+   PowerShell module installed.
+4. Basic familiarity with SSH and web browsers.
+
+Cloning the repository in Azure Cloud Shell
+1. Log in to the Azure Portal.
+2. Open Cloud Shell (top bar icon) and choose PowerShell if prompted.
+3. In Cloud Shell, clone the repository and change into the folder:
+
+   git clone <GITLAB-OR-GITHUB-URL>/cloud_arch_ca1.git
+   cd cloud_arch_ca1
+
+4. Verify that the expected files are present:
+
+   ls
+   # Setup.ps1, teardown.ps1, description.txt, vm_init.yml
+
+Deploying the environment with Setup.ps1
+1. From the repository folder, run the setup script:
+
+   ./Setup.ps1
+   # on some systems:
+   # .\Setup.ps1
+
+2. When prompted:
+
+   Enter password for VM local admin user 'ca1admin':
+
+   type a strong password of your choice and press Enter. This password will then be used later to SSH
+   into the VM.
+
+3. The script will:
+   - Ensure the resource group ca1_rg exists (or create it) in the norwayeast region.
+   - Create or repair the virtual network (ca1-vnet) and subnet (ca1-subnet).
+   - Create or reuse the network security group (ca1-nsg) with inbound rules for SSH (22) and
+     Tomcat HTTP (8080).
+   - Create a Standard SKU IPv4 public IP address (ca1-pip).
+   - Create a network interface (ca1-nic) attached to the subnet, NSG and public IP.
+   - Create an Ubuntu 22.04 VM (ca1-vm) with the vm_init.yml cloud-init file attached.
+
+4. At the end of the script, you should see output similar to:
+
+   VM created. Public IP: 20.251.206.108
+   SSH: ssh ca1admin@20.251.206.108
+   HTTP: http://20.251.206.108:8080/
+
+   The exact IP address will differ.
+
+What vm_init.yml does
+1. Updates and upgrades Ubuntu packages.
+2. Installs:
+   - openjdk-17-jdk
+   - tomcat9
+   - git
+3. Writes a simple JSP page to /var/lib/tomcat9/webapps/ROOT/index.jsp that displays:
+   - A heading “TaskBoard – Java JSP app on Azure IaaS”
+   - Hostname of the VM
+   - Java version running on the server
+4. Enables and restarts the tomcat9 service so that Tomcat starts automatically and serves the JSP.
+
+Verifying the VM and web application
+1. From a local browser (or another machine with internet access), browse to:
+
+   http://<PUBLIC_IP_FROM_SETUP>:8080/
+
+2. You should see the TaskBoard JSP page deployed by vm_init.yml.
+3. If the page does not load:
+   - Check that the VM is running in the Azure Portal.
+   - Check that the NSG ca1-nsg contains inbound rules for ports 22 and 8080.
+   - SSH into the VM and verify Tomcat:
+
+     ssh ca1admin@<PUBLIC_IP_FROM_SETUP>
+     # enter the password you chose
+
+     Once logged in:
+
+     systemctl status tomcat9
+
+   - Ensure the index.jsp file exists:
+
+     ls -l /var/lib/tomcat9/webapps/ROOT/index.jsp
+
+SSH access to the VM
+1. From Cloud Shell or your own terminal, connect using:
+
+   ssh ca1admin@<PUBLIC_IP_FROM_SETUP>
+
+2. Accept the host key on first connection if prompted.
+3. Enter the password you provided during the Setup.ps1 run.
+
+Deploying a custom JSP/Servlet application (optional manual step)
+1. Build your own TaskBoard WAR file on your local machine using Maven or Gradle (for example
+   taskboard.war).
+2. Copy the WAR to the VM using scp:
+
+   scp target/taskboard.war ca1admin@<PUBLIC_IP_FROM_SETUP>:/home/ca1admin/
+
+3. SSH into the VM:
+
+   ssh ca1admin@<PUBLIC_IP_FROM_SETUP>
+
+4. Move the WAR file into the Tomcat webapps directory:
+
+   sudo mv /home/ca1admin/taskboard.war /var/lib/tomcat9/webapps/
+
+5. Tomcat will automatically unpack and deploy the application. It will then be available at:
+
+   http://<PUBLIC_IP_FROM_SETUP>:8080/taskboard/
+
+Tearing down the environment
+1. When you are finished with the environment and no longer need the resources, run:
+
+   ./teardown.ps1
+   # or:
+   .\teardown.ps1
+
+2. The script deletes the resource group ca1_rg and all resources in it. This may take a few minutes
+   to complete in Azure.
+3. You can verify deletion with:
+
+   Get-AzResourceGroup -Name ca1_rg
+
+   If the resource group is not found, the teardown has completed successfully.
