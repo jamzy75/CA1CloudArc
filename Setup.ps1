@@ -1,3 +1,11 @@
+
+<#
+  Setup.ps1
+  Creates the ca1_rg resource group, networking, public IP, and an Ubuntu VM with cloud-init.
+  Intended for Cloud Architecture CA1.
+#>
+
+
 param(
     [string]$Location = "norwayeast",
     [string]$AdminUsername = "ca1admin"
