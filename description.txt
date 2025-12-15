@@ -1,0 +1,12 @@
+TaskBoard – Java web app on Azure IaaS
+
+The service I am hosting is a simple Java JSP/Servlet web application called “TaskBoard”. It is a small task-tracking web app that allows users to view and manage a list of example tasks through a browser.
+
+The application is deployed on an Apache Tomcat application server running on an Ubuntu Linux virtual machine in Microsoft Azure. The VM is created inside a virtual network  for isolation and is reachable from the public internet over HTTP and SSH.
+
+Key points:
+- Java web app implemented using JSP/Servlets (deployed to Tomcat)
+- Ubuntu Linux VM hosted on Azure (IaaS)
+- VM is in a VNet and protected by a Network Security Group (NSG)
+- HTTP traffic to Tomcat (port 8080) and SSH management (port 22) are allowed
+- VM initial configuration is handled by a cloud-init file to minimise manual setup
